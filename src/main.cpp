@@ -1,6 +1,8 @@
-#include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include <iostream>
+#include <cmath>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -10,17 +12,18 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // vertex shader in the shader language GLSL (OpenGL Shading Language)
-const char *vertexShaderSource = "#version 330 core\n"
+const char *vertexShaderSource ="#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    "   gl_Position = vec4(aPos, 1.0);\n"
     "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
+    "uniform vec4 ourColor;\n"
     "void main()\n"
     "{\n"
-    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "   FragColor = ourColor;\n"
     "}\n\0";
 
 int main()
@@ -109,40 +112,29 @@ int main()
     // Set up vertex data (and buffer(s)) and configure vertex attributes
     // Vertex data for a rectangle
     // The rectangle is defined by 4 vertices (2 triangles)
-    float vertices[] = 
-    {
-        0.5f,  0.5f, 0.0f,  // top right
+    float vertices[] = {
         0.5f, -0.5f, 0.0f,  // bottom right
        -0.5f, -0.5f, 0.0f,  // bottom left
-       -0.5f,  0.5f, 0.0f   // top left 
-    };
-    // The rectangle is defined by 2 triangles
-    unsigned int indices[] = {  // note that we start from 0!
-        0, 1, 3,   // first triangle
-        1, 2, 3    // second triangle
-    };
+        0.0f,  0.5f, 0.0f   // top 
+   };
 
     // Generate and bind a Vertex Buffer Object (VBO)
     // Generate a buffer ID
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    // Create element buffer object (EBO)
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
 
     // Bind the Vertex Array Object first, then bind and set vertex buffer(s)
     glBindVertexArray(VAO);
+
+    // Bind the buffer to the GL_ARRAY_BUFFER target
+    // This tells OpenGL that we want to use the buffer as a vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     // Copy the vertex data into the buffer's memory
     // The first parameter is the target buffer, the second is the size of the data,
     // the third is a pointer to the data, and the last is the usage pattern
     // GL_STATIC_DRAW indicates that the data will not change
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    // Copy index array data into the buffer's memory
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     
     // 3. then set our vertex attributes pointers
      /*Tells Intrepret vertex data
@@ -155,14 +147,10 @@ int main()
      last parameter is the pointer to the vertex attribute data */ 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);  
-
-    // Bind the buffer to the GL_ARRAY_BUFFER target
-    // This tells OpenGL that we want to use the buffer as a vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     
     // Unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0); 
+    glBindVertexArray(VAO); 
     
 
     // Render loop
@@ -175,11 +163,21 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Rectnagle drawing
+        // Activate the shader program
         glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
+
+        // update shader uniform
+        double  timeValue = glfwGetTime();
+        float greenValue = static_cast<float>(sin(timeValue) / 2.0 + 0.5);
+        // Get the location of the uniform variable in the shader program
+        // and set its value
+        // The uniform variable is used to pass data from the CPU to the GPU
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+        // render the triangle
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
         
         // Swap the buffers & check and call for events
         glfwSwapBuffers(window);
