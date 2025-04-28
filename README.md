@@ -1,2 +1,2 @@
 # 3D Viewer with OpenGL
- A windows application that visualizes 3D objects and allows the user to transform them 
+An interactive 3D viewer application built with modern OpenGL (GLFW + GLAD). Allows real-time visualization, transformation (move, rotate, scale) of 3D objects, with programmable shaders and user input handling.
