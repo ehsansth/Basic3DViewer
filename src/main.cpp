@@ -59,6 +59,7 @@ int main()
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     // Attach the shader source code to the shader object
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    
     // Compile the shader
     glCompileShader(vertexShader);
     int success;
@@ -106,17 +107,29 @@ int main()
     glDeleteShader(fragmentShader);
     
     // Set up vertex data (and buffer(s)) and configure vertex attributes
-    // Vertex data for a triangle
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            0.0f,  0.5f, 0.0f
+    // Vertex data for a rectangle
+    // The rectangle is defined by 4 vertices (2 triangles)
+    float vertices[] = 
+    {
+        0.5f,  0.5f, 0.0f,  // top right
+        0.5f, -0.5f, 0.0f,  // bottom right
+       -0.5f, -0.5f, 0.0f,  // bottom left
+       -0.5f,  0.5f, 0.0f   // top left 
     };
+    // The rectangle is defined by 2 triangles
+    unsigned int indices[] = {  // note that we start from 0!
+        0, 1, 3,   // first triangle
+        1, 2, 3    // second triangle
+    };
+
     // Generate and bind a Vertex Buffer Object (VBO)
     // Generate a buffer ID
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
+    // Create element buffer object (EBO)
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
 
     // Bind the Vertex Array Object first, then bind and set vertex buffer(s)
     glBindVertexArray(VAO);
@@ -126,6 +139,11 @@ int main()
     // the third is a pointer to the data, and the last is the usage pattern
     // GL_STATIC_DRAW indicates that the data will not change
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    // Copy index array data into the buffer's memory
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    
     // 3. then set our vertex attributes pointers
      /*Tells Intrepret vertex data
      first parammeter is which vertex attribute to configure,
@@ -157,20 +175,18 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Triangle
+        // Rectnagle drawing
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        // Draw the triangle using the vertex array object
-        // The first parameter is the mode (GL_TRIANGLES), the second is the number of vertices to draw,
-        // the third is the starting index of the vertex array, and the last is the number of instances to draw
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
         
         // Swap the buffers & check and call for events
         glfwSwapBuffers(window);
         glfwPollEvents();
         
     }
+
     // de-allocate all resources once they've outlived their purpose
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
